@@ -102,7 +102,7 @@ export default function HistoryPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-2xl p-5"
+          className="glass rounded-2xl p-6"
         >
           <h3 className="font-semibold font-display mb-4">Calendar</h3>
           {loading ? (
