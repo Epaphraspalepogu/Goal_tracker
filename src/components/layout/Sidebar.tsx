@@ -175,12 +175,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         </nav>
 
-        <div className="p-4 shrink-0">
+        {/* <div className="p-4 shrink-0">
           <div className="glass rounded-xl p-4 text-center">
             <p className="text-xs text-muted-foreground">Powered by</p>
             <p className="text-sm font-semibold gradient-text">GoalFlow</p>
           </div>
-        </div>
+        </div> */}
       </aside>
     </>
   );
