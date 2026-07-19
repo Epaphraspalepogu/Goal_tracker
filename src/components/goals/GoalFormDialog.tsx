@@ -27,6 +27,10 @@ const schema = z.object({
   description: z.string().optional(),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
+  repeat_days: z.preprocess((val) => {
+    if (val === '' || val === undefined || val === null) return undefined;
+    return Number(val);
+  }, z.number().int().min(0).max(30).optional()),
   category: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   color: z.string().optional(),
@@ -66,6 +70,7 @@ export function GoalFormDialog({ open, onClose, onSubmit, editingGoal }: GoalFor
           description: '',
           start_time: '',
           end_time: '',
+          repeat_days: 0,
           category: 'General',
           priority: 'medium',
           color: GOAL_COLORS[0],
@@ -80,8 +85,9 @@ export function GoalFormDialog({ open, onClose, onSubmit, editingGoal }: GoalFor
     await onSubmit({
       title: data.title,
       description: data.description || '',
-      start_time: data.start_time || undefined,
-      end_time: data.end_time || undefined,
+      start_time: data.start_time === '' ? null : data.start_time ?? undefined,
+      end_time: data.end_time === '' ? null : data.end_time ?? undefined,
+      repeat_days: data.repeat_days,
       category: data.category || 'General',
       priority: (data.priority as Priority) || 'medium',
       color: data.color || GOAL_COLORS[0],
@@ -118,6 +124,23 @@ export function GoalFormDialog({ open, onClose, onSubmit, editingGoal }: GoalFor
               <Input id="end_time" type="time" {...register('end_time')} />
             </div>
           </div>
+
+          {!editingGoal && (
+            <div className="space-y-2">
+              <Label htmlFor="repeat_days">Repeat for next days</Label>
+              <Input
+                id="repeat_days"
+                type="number"
+                min={0}
+                max={30}
+                step={1}
+                {...register('repeat_days', { valueAsNumber: true })}
+              />
+              <p className="text-sm text-muted-foreground">
+                Create this goal for today and the next number of days with the same timetable.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

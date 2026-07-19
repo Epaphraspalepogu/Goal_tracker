@@ -188,6 +188,29 @@ export default function DashboardPage() {
               />
             </AreaChart>
           </ResponsiveContainer>
+
+          <div className="mt-6 rounded-2xl border border-primary/10 bg-primary/5 p-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <p className="text-sm font-semibold">Streak</p>
+                <p className="text-xs text-muted-foreground">Keep your daily goal momentum going</p>
+              </div>
+              <div className="rounded-full bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold">
+                {streak} {streak === 1 ? 'day' : 'days'}
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {weekData.map((day) => (
+                <div
+                  key={day.day}
+                  className={`rounded-2xl border p-2 text-center text-[10px] font-semibold ${day.total > 0 ? 'bg-success text-success-foreground border-success/30' : 'bg-muted/10 text-muted-foreground border-muted/30'}`}
+                >
+                  <div>{day.day}</div>
+                  <div className="mt-1 text-xs">{day.total > 0 ? '✓' : '—'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </motion.div>
 
         {/* Today's progress ring + pie */}

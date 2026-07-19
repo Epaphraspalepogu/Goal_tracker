@@ -30,12 +30,13 @@ export interface Goal {
 export interface GoalInput {
   title: string;
   description?: string;
-  start_time?: string;
-  end_time?: string;
+  start_time?: string | null;
+  end_time?: string | null;
   category?: string;
   priority?: Priority;
   color?: string;
   status?: GoalStatus;
+  repeat_days?: number;
 }
 
 export const CATEGORIES = [

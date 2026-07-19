@@ -13,7 +13,7 @@ import {
   Target,
   Download,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useDateState } from '@/hooks/useDateState';
@@ -93,13 +93,26 @@ export default function TodayPage() {
 
   const handleSubmit = async (data: GoalInput) => {
     if (!profile) return;
+
+    const repeatDays = data.repeat_days ?? 0;
+    const payload = { ...data };
+    delete payload.repeat_days;
+
     try {
       if (editingGoal) {
-        await updateGoal(editingGoal.id, data);
+        await updateGoal(editingGoal.id, payload);
         toast.success('Goal updated');
       } else {
-        await createGoal(profile.id, dateISO, data);
-        toast.success('Goal created');
+        const dates = [dateISO];
+        for (let i = 1; i <= repeatDays; i += 1) {
+          dates.push(format(addDays(new Date(dateISO), i), 'yyyy-MM-dd'));
+        }
+
+        await Promise.all(
+          dates.map((goalDate) => createGoal(profile.id, goalDate, payload)),
+        );
+
+        toast.success(repeatDays > 0 ? `Goal created for ${repeatDays + 1} days` : 'Goal created');
       }
       loadGoals();
     } catch {
@@ -180,110 +193,100 @@ export default function TodayPage() {
 
   return (
     <div>
-      <PageHeader
+        <PageHeader
         title="Today's Goals"
         subtitle={format(date, 'EEEE, d MMMM yyyy')}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleExport} disabled={goals.length === 0}>
-              <Download className="size-4 mr-1" /> Export
-            </Button>
-            <Button size="sm" onClick={handleCreate}>
-              <Plus className="size-4 mr-1" /> Add Goal
-            </Button>
-          </div>
-        }
       />
 
-      {/* Date navigation */}
-      <div className="flex items-center justify-between gap-4 mb-6 glass rounded-2xl p-4">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={goPrev} className="rounded-lg">
-            <ChevronLeft className="size-5" />
-          </Button>
-          <div className="text-center min-w-[180px]">
-            <p className="font-semibold font-display">{format(date, 'EEEE')}</p>
-            <p className="text-sm text-muted-foreground">{format(date, 'd MMMM yyyy')}</p>
+      {/* Stats summary */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-1 mb-3 text-[11px]">
+        <div className="glass rounded-2xl p-2 flex items-center gap-2">
+          <ProgressRing progress={stats.completionRate} size={40} strokeWidth={4} showLabel={false} />
+          <div>
+            <p className="uppercase tracking-[0.2em] text-muted-foreground">Completion</p>
+            <p className="text-sm font-semibold font-display">{stats.completionRate}%</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={goNext} className="rounded-lg">
-            <ChevronRight className="size-5" />
-          </Button>
         </div>
-
-        <div className="flex items-center gap-2">
-          {!isToday && (
-            <Button variant="outline" size="sm" onClick={goToday}>
-              Today
-            </Button>
-          )}
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <CalendarIcon className="size-4 mr-1" /> Pick Date
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 glass" align="end">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(d) => {
-                  if (d) {
-                    setSpecificDate(d);
-                    setCalendarOpen(false);
-                  }
-                }}
-                className="rounded-xl"
-              />
-            </PopoverContent>
-          </Popover>
+        <div className="glass rounded-2xl p-2 flex items-center gap-2">
+          <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Target className="size-3.5 text-primary" />
+          </div>
+          <div>
+            <p className="uppercase tracking-[0.2em] text-muted-foreground">Total</p>
+            <p className="text-sm font-semibold font-display">{stats.total}</p>
+          </div>
+        </div>
+        <div className="glass rounded-2xl p-2 flex items-center gap-2">
+          <div className="size-8 rounded-xl bg-success/10 flex items-center justify-center">
+            <CheckCircle2 className="size-3.5 text-success" />
+          </div>
+          <div>
+            <p className="uppercase tracking-[0.2em] text-muted-foreground">Completed</p>
+            <p className="text-sm font-semibold font-display">{stats.completed}</p>
+          </div>
+        </div>
+        <div className="glass rounded-2xl p-2 flex items-center gap-2">
+          <div className="size-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <Clock className="size-3.5 text-amber-500" />
+          </div>
+          <div>
+            <p className="uppercase tracking-[0.2em] text-muted-foreground">Pending</p>
+            <p className="text-sm font-semibold font-display">{stats.pending}</p>
+          </div>
+        </div>
+        <div className="glass rounded-2xl p-2 flex items-center gap-2">
+          <div className="size-8 rounded-xl bg-muted flex items-center justify-center">
+            <SkipForward className="size-3.5 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="uppercase tracking-[0.2em] text-muted-foreground">Skipped</p>
+            <p className="text-sm font-semibold font-display">{stats.skipped}</p>
+          </div>
         </div>
       </div>
 
-      {/* Stats summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <ProgressRing progress={stats.completionRate} size={64} strokeWidth={6} showLabel={false} />
-          <div>
-            <p className="text-sm text-muted-foreground">Completion</p>
-            <p className="text-xl font-bold font-display">{stats.completionRate}%</p>
-          </div>
+      <div className="flex items-center gap-1 mb-4 flex-wrap">
+        <Button variant="ghost" size="icon" onClick={handleExport} disabled={goals.length === 0} title="Export goals">
+          <Download className="size-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={handleCreate} title="Add goal">
+          <Plus className="size-4" />
+        </Button>
+        <Button variant="ghost" size="icon" onClick={goPrev} title="Previous day">
+          <ChevronLeft className="size-4" />
+        </Button>
+        <div className="text-center min-w-[120px]">
+          <p className="font-semibold text-sm">{format(date, 'EEE')}</p>
+          <p className="text-[10px] text-muted-foreground">{format(date, 'd MMM')}</p>
         </div>
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Target className="size-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Total</p>
-            <p className="text-xl font-bold font-display">{stats.total}</p>
-          </div>
-        </div>
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-success/10 flex items-center justify-center">
-            <CheckCircle2 className="size-5 text-success" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Completed</p>
-            <p className="text-xl font-bold font-display">{stats.completed}</p>
-          </div>
-        </div>
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <Clock className="size-5 text-amber-500" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Pending</p>
-            <p className="text-xl font-bold font-display">{stats.pending}</p>
-          </div>
-        </div>
-        <div className="glass rounded-2xl p-4 flex items-center gap-3">
-          <div className="size-10 rounded-xl bg-muted flex items-center justify-center">
-            <SkipForward className="size-5 text-muted-foreground" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Skipped</p>
-            <p className="text-xl font-bold font-display">{stats.skipped}</p>
-          </div>
-        </div>
+        <Button variant="ghost" size="icon" onClick={goNext} title="Next day">
+          <ChevronRight className="size-4" />
+        </Button>
+        {!isToday && (
+          <Button variant="ghost" size="icon" onClick={goToday} title="Go to today">
+            <Target className="size-4" />
+          </Button>
+        )}
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" title="Pick date">
+              <CalendarIcon className="size-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 glass" align="end">
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={(d) => {
+                if (d) {
+                  setSpecificDate(d);
+                  setCalendarOpen(false);
+                }
+              }}
+              className="rounded-xl"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Search and filters */}
