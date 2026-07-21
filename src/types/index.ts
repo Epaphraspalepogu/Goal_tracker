@@ -36,6 +36,7 @@ export interface GoalInput {
   priority?: Priority;
   color?: string;
   status?: GoalStatus;
+  repeat_months?: number;
   repeat_days?: number;
 }
 

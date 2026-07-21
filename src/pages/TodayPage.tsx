@@ -13,7 +13,7 @@ import {
   Target,
   Download,
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format, addDays, addMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useDateState } from '@/hooks/useDateState';
@@ -94,8 +94,10 @@ export default function TodayPage() {
   const handleSubmit = async (data: GoalInput) => {
     if (!profile) return;
 
+    const repeatMonths = data.repeat_months ?? 0;
     const repeatDays = data.repeat_days ?? 0;
     const payload = { ...data };
+    delete payload.repeat_months;
     delete payload.repeat_days;
 
     try {
@@ -103,16 +105,22 @@ export default function TodayPage() {
         await updateGoal(editingGoal.id, payload);
         toast.success('Goal updated');
       } else {
-        const dates = [dateISO];
+        const dates = new Set<string>([dateISO]);
+
+        for (let i = 1; i <= repeatMonths; i += 1) {
+          dates.add(format(addMonths(new Date(dateISO), i), 'yyyy-MM-dd'));
+        }
+
         for (let i = 1; i <= repeatDays; i += 1) {
-          dates.push(format(addDays(new Date(dateISO), i), 'yyyy-MM-dd'));
+          dates.add(format(addDays(new Date(dateISO), i), 'yyyy-MM-dd'));
         }
 
         await Promise.all(
-          dates.map((goalDate) => createGoal(profile.id, goalDate, payload)),
+          Array.from(dates).map((goalDate) => createGoal(profile.id, goalDate, payload)),
         );
 
-        toast.success(repeatDays > 0 ? `Goal created for ${repeatDays + 1} days` : 'Goal created');
+        const repeatLabel = repeatMonths || repeatDays ? ` for ${repeatMonths} month(s)${repeatDays ? ` and ${repeatDays} day(s)` : ''}` : '';
+        toast.success(`Goal created${repeatLabel}`);
       }
       loadGoals();
     } catch {

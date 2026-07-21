@@ -11,6 +11,8 @@ import {
   Loader2,
   Moon,
   Sun,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,6 +70,8 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [notifSettings, setNotifSettings] = useState({
@@ -234,14 +238,42 @@ export default function SettingsPage() {
               <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-4">
                 <div className="space-y-2">
                   <Label>New Password</Label>
-                  <Input type="password" {...passwordForm.register('newPassword')} />
+                  <div className="relative">
+                    <Input
+                      type={showNewPassword ? 'text' : 'password'}
+                      {...passwordForm.register('newPassword')}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                    >
+                      {showNewPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                   {passwordForm.formState.errors.newPassword && (
                     <p className="text-sm text-destructive">{passwordForm.formState.errors.newPassword.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label>Confirm Password</Label>
-                  <Input type="password" {...passwordForm.register('confirmPassword')} />
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      {...passwordForm.register('confirmPassword')}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                   {passwordForm.formState.errors.confirmPassword && (
                     <p className="text-sm text-destructive">{passwordForm.formState.errors.confirmPassword.message}</p>
                   )}
